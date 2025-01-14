@@ -5,7 +5,7 @@ TARGET_PID=$1
 # 检查间隔（秒）
 INTERVAL=5
 # 输出日志文件
-LOG_FILE="usage-$TARGET_PID-$(date "+%Y-%m-%d %H:%M:%S").log"
+LOG_FILE="usage-$TARGET_PID-$(date "+%Y_%m_%d_%H_%M_%S").log"
 
 if [ -z "$TARGET_PID" ]; then
   echo "Usage: $0 <pid>"
@@ -121,17 +121,8 @@ while true; do
 
       # 计算平均 GC 次数
       if [ $COUNT -gt 0 ]; then
-        if [ $YGC_EVENTS -gt 0 ]; then
-          AVG_YGC_COUNT=$(calc "$TOTAL_YGC_COUNT / $YGC_EVENTS")
-        else
-          AVG_YGC_COUNT=0
-        fi
-
-        if [ $FGC_EVENTS -gt 0 ]; then
-          AVG_FGC_COUNT=$(calc "$TOTAL_FGC_COUNT / $FGC_EVENTS")
-        else
-          AVG_FGC_COUNT=0
-        fi
+        AVG_YGC_COUNT=$(calc "$TOTAL_YGC_COUNT / $COUNT")
+        AVG_FGC_COUNT=$(calc "$TOTAL_FGC_COUNT / $COUNT")
       else
         AVG_YGC_COUNT=0
         AVG_FGC_COUNT=0
