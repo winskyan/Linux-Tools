@@ -5,7 +5,7 @@ TARGET_PID=$1
 # 检查间隔（秒）
 INTERVAL=5
 # 输出日志文件
-LOG_FILE="usage-$TARGET_PID-$(date "+%Y_%m_%d_%H_%M_%S").log"
+LOG_FILE="usage-$(date "+%Y_%m_%d_%H_%M_%S")-$TARGET_PID.log"
 
 if [ -z "$TARGET_PID" ]; then
   echo "Usage: $0 <pid>"
