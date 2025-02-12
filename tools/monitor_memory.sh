@@ -40,7 +40,7 @@ get_gc_stats() {
   if [ -n "$gc_stats" ]; then
     echo "$gc_stats"
   else
-    echo "0 0 0 0 0 0 0 0 0"
+    echo "0 0 0 0 0 0 0 0 0 0 0"
   fi
 }
 
@@ -59,7 +59,7 @@ while true; do
       GC_STATS=$(get_gc_stats $PID)
 
       # 解析GC统计信息
-      read S0 S1 E O YGC YGCT FGC FGCT GCT <<<$(echo $GC_STATS)
+      read S0 S1 E O M CCS YGC YGCT FGC FGCT GCT <<<$(echo $GC_STATS)
 
       # 计算瞬时GC次数和时间
       if [ $COUNT -eq 0 ]; then
@@ -133,6 +133,7 @@ while true; do
 
       # 构建输出信息
       CURRENT_INFO="Current: $TIMESTAMP, PID=$PID, Memory=$MEM_USAGE_MB MB, CPU=$CPU_USAGE%"
+      GC_RAW="Raw GC: Young GC=$YGC, Young GC Time=$YGCT, Full GC=$FGC, Full GC Time=$FGCT"
       GC_INSTANT="Instant GC: Young GC=$INSTANT_YGC(${INSTANT_YGCT}ms), Full GC=$INSTANT_FGC(${INSTANT_FGCT}ms)"
       GC_AVG="Average GC: YGC=${AVG_YGC_COUNT}(${AVG_YGC_TIME}ms), FGC=${AVG_FGC_COUNT}(${AVG_FGC_TIME}ms)"
       AVERAGE_INFO="Average: Memory=$AVG_MEM MB, CPU=$AVG_CPU%"
@@ -140,6 +141,7 @@ while true; do
 
       # 输出到终端
       echo "$CURRENT_INFO"
+      echo "$GC_RAW"
       echo "$GC_INSTANT"
       echo "$GC_AVG"
       echo "$AVERAGE_INFO"
@@ -147,6 +149,7 @@ while true; do
 
       # 写入日志
       echo "$CURRENT_INFO" >>"$LOG_FILE"
+      echo "$GC_RAW" >>"$LOG_FILE"
       echo "$GC_INSTANT" >>"$LOG_FILE"
       echo "$GC_AVG" >>"$LOG_FILE"
       echo "$AVERAGE_INFO" >>"$LOG_FILE"
