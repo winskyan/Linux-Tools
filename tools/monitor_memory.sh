@@ -52,7 +52,13 @@ get_gc_stats() {
 
 # 函数：安全的浮点数计算
 calc() {
-  echo "scale=3; $1" | bc | awk '{printf "%.3f\n", $0}'
+  local result
+  result=$(echo "$1" | bc -l 2>/dev/null)
+  if [ $? -eq 0 ] && [ -n "$result" ]; then
+    printf "%.3f\n" "$result"
+  else
+    echo "0.000"
+  fi
 }
 
 # 新增监控函数
@@ -91,20 +97,33 @@ while true; do
         INSTANT_YGCT=0
         INSTANT_FGCT=0
       else
-        INSTANT_YGC=$(calc "$YGC - $LAST_YGC")
-        INSTANT_FGC=$(calc "$FGC - $LAST_FGC")
-        INSTANT_YGCT=$(calc "scale=9; (($YGCT - $LAST_YGCT)*1000)" | awk '{val=$1>=0.1?$1:0; printf "%.3f\n", val}')
-        INSTANT_FGCT=$(calc "scale=6; (($FGCT - $LAST_FGCT)*1000)" | awk '{val=$1>0.001?$1:0; printf "%.3f\n", val}')
+        # 计算GC次数差值
+        INSTANT_YGC=$((YGC - LAST_YGC))
+        INSTANT_FGC=$((FGC - LAST_FGC))
+
+        # 计算GC时间差值(毫秒)
+        if [ $INSTANT_YGC -gt 0 ]; then
+          INSTANT_YGCT=$(calc "(($YGCT - $LAST_YGCT) * 1000)")
+        else
+          INSTANT_YGCT="0.000"
+        fi
+
+        if [ $INSTANT_FGC -gt 0 ]; then
+          INSTANT_FGCT=$(calc "(($FGCT - $LAST_FGCT) * 1000)")
+        else
+          INSTANT_FGCT="0.000"
+        fi
       fi
 
       # 更新累计GC统计
-      TOTAL_YGC_COUNT=$(calc "$TOTAL_YGC_COUNT + $INSTANT_YGC")
-      TOTAL_FGC_COUNT=$(calc "$TOTAL_FGC_COUNT + $INSTANT_FGC")
-      if [ $(echo "$INSTANT_YGCT >= 0.1" | bc) -eq 1 ]; then
+      if [ $INSTANT_YGC -gt 0 ]; then
+        TOTAL_YGC_COUNT=$((TOTAL_YGC_COUNT + INSTANT_YGC))
         TOTAL_YGC_TIME=$(calc "$TOTAL_YGC_TIME + $INSTANT_YGCT")
         YGC_EVENTS=$((YGC_EVENTS + 1))
       fi
-      if [ $(echo "$INSTANT_FGCT > 0" | bc) -eq 1 ]; then
+
+      if [ $INSTANT_FGC -gt 0 ]; then
+        TOTAL_FGC_COUNT=$((TOTAL_FGC_COUNT + INSTANT_FGC))
         TOTAL_FGC_TIME=$(calc "$TOTAL_FGC_TIME + $INSTANT_FGCT")
         FGC_EVENTS=$((FGC_EVENTS + 1))
       fi
@@ -136,39 +155,20 @@ while true; do
       AVG_CPU=$(calc "$TOTAL_CPU / $COUNT")
 
       # 计算有值的GC平均次数和时间
-      if [ "$(calc "$INSTANT_YGC > 0")" = "1" ]; then
-        YGC_EVENTS=$((YGC_EVENTS + 1))
-      fi
-
-      if [ "$(calc "$INSTANT_FGC > 0")" = "1" ]; then
-        FGC_EVENTS=$((FGC_EVENTS + 1))
-      fi
-
       if [ $YGC_EVENTS -gt 0 ]; then
-        AVG_YGC_TIME=$(calc "scale=3; $TOTAL_YGC_TIME / $YGC_EVENTS" | awk '{
-          if ($1 == "" || $1 == 0) print "0.000";
-          else printf "%.3f\n", $0
-        }')
+        AVG_YGC_COUNT=$(calc "$TOTAL_YGC_COUNT / $YGC_EVENTS")
+        AVG_YGC_TIME=$(calc "$TOTAL_YGC_TIME / $YGC_EVENTS")
       else
-        AVG_YGC_TIME=0
+        AVG_YGC_COUNT="0.000"
+        AVG_YGC_TIME="0.000"
       fi
 
       if [ $FGC_EVENTS -gt 0 ]; then
-        AVG_FGC_TIME=$(calc "scale=3; $TOTAL_FGC_TIME / $FGC_EVENTS" | awk '{
-          if ($1 == "" || $1 == 0) print "0.000";
-          else printf "%.3f\n", $0
-        }')
+        AVG_FGC_COUNT=$(calc "$TOTAL_FGC_COUNT / $FGC_EVENTS")
+        AVG_FGC_TIME=$(calc "$TOTAL_FGC_TIME / $FGC_EVENTS")
       else
-        AVG_FGC_TIME=0
-      fi
-
-      # 计算平均 GC 次数
-      if [ $COUNT -gt 0 ]; then
-        AVG_YGC_COUNT=$(calc "scale=3; $TOTAL_YGC_COUNT / $COUNT" | awk '{printf "%.3f\n", $0}')
-        AVG_FGC_COUNT=$(calc "scale=3; $TOTAL_FGC_COUNT / $COUNT" | awk '{printf "%.3f\n", $0}')
-      else
-        AVG_YGC_COUNT=0
-        AVG_FGC_COUNT=0
+        AVG_FGC_COUNT="0.000"
+        AVG_FGC_TIME="0.000"
       fi
 
       # 计算新增累计值
