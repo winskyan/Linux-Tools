@@ -104,12 +104,18 @@ while true; do
         # 计算GC时间差值(毫秒)
         if [ $INSTANT_YGC -gt 0 ]; then
           INSTANT_YGCT=$(calc "(($YGCT - $LAST_YGCT) * 1000)")
+          if (( $(echo "$INSTANT_YGCT == 0" | bc -l) )); then
+            INSTANT_YGCT="0.001"
+          fi
         else
           INSTANT_YGCT="0.000"
         fi
 
         if [ $INSTANT_FGC -gt 0 ]; then
           INSTANT_FGCT=$(calc "(($FGCT - $LAST_FGCT) * 1000)")
+          if (( $(echo "$INSTANT_FGCT == 0" | bc -l) )); then
+            INSTANT_FGCT="0.001"
+          fi
         else
           INSTANT_FGCT="0.000"
         fi
