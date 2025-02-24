@@ -5,7 +5,7 @@ TARGET_PID=$1
 # 检查间隔（秒）
 INTERVAL=2
 # 输出日志文件
-LOG_FILE="usage-$(date "+%Y_%m_%d_%H_%M_%S")-$TARGET_PID.log"
+LOG_FILE="usage-$(date "+%Y%m%d_%H%M%S")-$TARGET_PID.log"
 
 if [ -z "$TARGET_PID" ]; then
   echo "Usage: $0 <pid>"
@@ -83,7 +83,16 @@ while true; do
   ')
 
   if [ -n "$PROCESS_INFO" ]; then
-    while read -r PID MEM_USAGE_KB CPU_USAGE; do
+    while read -r PID MEM_USAGE CPU_USAGE; do
+      # 处理内存单位
+      if [[ $MEM_USAGE == *g ]]; then
+        MEM_USAGE=$(calc "${MEM_USAGE%g} * 1024 * 1024")  # 转换为KB
+      elif [[ $MEM_USAGE == *m ]]; then
+        MEM_USAGE=$(calc "${MEM_USAGE%m} * 1024")  # 转换为KB
+      elif [[ $MEM_USAGE == *k ]]; then
+        MEM_USAGE="${MEM_USAGE%k}"  # 去掉k单位,保持为KB
+      fi
+
       # 获取GC统计信息
       GC_STATS=$(get_gc_stats $PID)
 
@@ -141,7 +150,7 @@ while true; do
       LAST_FGCT=$FGCT
 
       # 将内存单位从 KB 转换为 MB
-      MEM_USAGE_MB=$(calc "$MEM_USAGE_KB / 1024")
+      MEM_USAGE_MB=$(calc "$MEM_USAGE / 1024")
 
       # 更新累计值
       COUNT=$((COUNT + 1))
