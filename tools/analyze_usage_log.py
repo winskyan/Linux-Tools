@@ -7,26 +7,26 @@ import matplotlib
 import sys
 import os
 
-# 根据平台自动选择合适的后端和字体
+# Automatically select appropriate backend and font based on platform
 platform = sys.platform
 INTERACTIVE = False
 
-# 直接设置一个基础字体作为备用
+# Set a basic font as fallback
 BASE_FONT = 'DejaVu Sans'
 
-# 在开始时设置后端，防止被其他库修改
+# Set backend at the beginning to prevent modification by other libraries
 if platform.startswith('linux'):
     matplotlib.use('Agg')
-    # 尝试添加字体目录
+    # Try to add font directory
     os.environ['FONTCONFIG_PATH'] = '/etc/fonts'
 
-# 添加字体检测和优化函数
+# Add font detection and optimization functions
 def get_available_chinese_fonts():
-    """检测系统中可用的中文字体"""
+    """Detect available Chinese fonts in the system"""
     from matplotlib.font_manager import fontManager
     available_fonts = []
     
-    # 常见的Linux中文字体
+    # Common Linux Chinese fonts
     linux_chinese_fonts = [
         'Noto Sans CJK SC', 'Noto Sans CJK TC', 
         'WenQuanYi Micro Hei', 'WenQuanYi Zen Hei',
@@ -35,39 +35,39 @@ def get_available_chinese_fonts():
         'AR PL UMing CN', 'AR PL KaitiM GB'
     ]
     
-    # 获取所有可用字体的名称
+    # Get names of all available fonts
     font_names = [f.name for f in fontManager.ttflist]
     
-    # 检查中文字体是否可用
+    # Check if Chinese fonts are available
     for font in linux_chinese_fonts:
         if font in font_names:
             available_fonts.append(font)
     
     return available_fonts
 
-# 检查DejaVu Sans字体是否可用
+# Check if DejaVu Sans font is available
 def is_dejavu_available():
-    """检查DejaVu Sans字体是否可用"""
+    """Check if DejaVu Sans font is available"""
     from matplotlib.font_manager import fontManager
     font_names = [f.name for f in fontManager.ttflist]
     return 'DejaVu Sans' in font_names
 
-# 检测操作系统类型并设置相应的配置
+# Detect OS type and set appropriate configuration
 if platform.startswith('linux'):
-    # Linux环境：使用非交互式后端
+    # Linux environment: use non-interactive backend
     matplotlib.use('Agg')
-    # 添加常见的Linux中文字体
+    # Add common Linux Chinese fonts
     FONT_LIST = [
         'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Droid Sans Fallback',
         'Source Han Sans CN', 'WenQuanYi Zen Hei', 'AR PL UMing CN',
         'DejaVu Sans', 'Liberation Sans', 'FreeSans'
     ]
 elif platform == 'darwin':
-    # Mac环境：使用交互式后端
+    # Mac environment: use interactive backend
     INTERACTIVE = True
     FONT_LIST = ['Arial Unicode MS', 'PingFang SC', 'Heiti SC', 'Helvetica']
 else:
-    # Windows或其他环境
+    # Windows or other environments
     FONT_LIST = ['Microsoft YaHei', 'SimHei', 'Arial Unicode MS']
     INTERACTIVE = True
 
@@ -76,45 +76,45 @@ import pandas as pd
 import matplotlib.dates as mdates
 import numpy as np
 
-# 重置matplotlib字体缓存
+# Reset matplotlib font cache
 try:
     from matplotlib.font_manager import _rebuild
     _rebuild()
 except:
     pass
 
-# 尝试检测可用的中文字体并使用
+# Try to detect available Chinese fonts and use them
 try:
     available_chinese_fonts = get_available_chinese_fonts()
     dejavu_available = is_dejavu_available()
     
     if available_chinese_fonts:
-        print(u"检测到可用的中文字体: {}".format(", ".join(available_chinese_fonts[:3])))
+        print("Detected available Chinese fonts: {}".format(", ".join(available_chinese_fonts[:3])))
         
         if dejavu_available:
-            # 确保DejaVu Sans字体在列表中的位置靠前
+            # Ensure DejaVu Sans font is positioned at the front of the list
             FONT_LIST = ['DejaVu Sans'] + available_chinese_fonts + ['Liberation Sans', 'Arial']
-            print(u"将使用DejaVu Sans作为主要英文字体")
+            print("Will use DejaVu Sans as the main English font")
         else:
-            # 如果DejaVu Sans不可用，使用检测到的字体
+            # If DejaVu Sans is not available, use detected fonts
             FONT_LIST = available_chinese_fonts + ['Liberation Sans', 'Arial', 'FreeSans']
-            print(u"警告: DejaVu Sans字体不可用，将使用替代字体")
+            print("Warning: DejaVu Sans font is not available, will use alternative fonts")
     else:
-        print(u"警告: 未检测到可用的中文字体，图表中的中文可能无法正确显示")
-        print(u"建议安装中文字体: sudo apt-get install fonts-noto-cjk fonts-wqy-microhei fonts-wqy-zenhei")
+        print("Warning: No available Chinese fonts detected, Chinese characters may not display correctly")
+        print("Suggestion: Install Chinese fonts: sudo apt-get install fonts-noto-cjk fonts-wqy-microhei fonts-wqy-zenhei")
 except Exception as e:
-    print(u"字体检测过程中出现错误: {}".format(str(e)))
+    print("Error during font detection: {}".format(str(e)))
 
-# 确保设置正确的字体配置
+# Ensure correct font configuration
 plt.rcParams.update({
     'font.family': 'sans-serif',
     'font.sans-serif': FONT_LIST,
-    'axes.unicode_minus': False,  # 用来正常显示负号
+    'axes.unicode_minus': False,  # For correct display of minus sign
 })
 
-# 对于某些版本的matplotlib，需要显式指定默认字体
+# For some versions of matplotlib, need to explicitly specify default font
 try:
-    # 尝试找一个肯定存在的字体
+    # Try to find a font that definitely exists
     import matplotlib.font_manager as fm
     system_fonts = fm.findSystemFonts()
     if system_fonts:
@@ -123,53 +123,53 @@ try:
 except:
     pass
 
-# 尝试解决Linux环境下的中文绘图问题
+# Try to solve Chinese plotting issues in Linux environment
 if platform.startswith('linux'):
-    # 如果没有找到中文字体，使用fontconfig配置
+    # If no Chinese fonts found, use fontconfig configuration
     if not available_chinese_fonts:
-        # 增加设置一个更全面的字体配置
+        # Set a more comprehensive font configuration
         try:
-            # 使用matplotlib的内置配置
+            # Use matplotlib's built-in configuration
             plt.rcParams['font.sans-serif'] = ['DejaVu Sans', 'FreeSans', 'Liberation Sans'] + FONT_LIST
-            # 如果matplotlib版本支持fallback字体设置
+            # If matplotlib version supports fallback font setting
             if 'fallback_font' in plt.rcParams:
                 plt.rcParams['fallback_font'] = 'DejaVu Sans'
         except Exception as e:
-            print(u"字体设置过程中出现错误: {}".format(str(e)))
+            print("Error during font setting: {}".format(str(e)))
             
-    # 尝试另一种方式加载字体
+    # Try another way to load fonts
     try:
         from matplotlib import font_manager
-        # 添加系统字体路径
+        # Add system font paths
         for font_dir in ['/usr/share/fonts/', '/usr/local/share/fonts/']:
             if os.path.exists(font_dir):
-                # 尝试使用正确的方法加载字体目录
+                # Try to use the correct method to load font directory
                 try:
-                    # 新版matplotlib
+                    # New version of matplotlib
                     font_manager.fontManager.addfont(font_dir)
                 except AttributeError:
-                    # 旧版matplotlib
+                    # Old version of matplotlib
                     font_files = font_manager.findSystemFonts(fontpaths=[font_dir])
                     for font_file in font_files:
                         font_manager.fontManager.addfont(font_file)
     except Exception:
-        pass  # 忽略可能的错误
+        pass  # Ignore possible errors
 
-# 防止字体警告干扰输出
+# Prevent font warnings from interfering with output
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="matplotlib")
 
-# 添加pandas日期转换器的显式注册，消除警告
+# Add explicit registration of pandas date converters to eliminate warnings
 try:
     from pandas.plotting import register_matplotlib_converters
     register_matplotlib_converters()
 except ImportError:
-    # 如果是老版本pandas，可能没有这个模块
+    # For older versions of pandas, this module might not exist
     pass
 
 def parse_log_file(file_path):
-    # 从日志中解析数据
-    # Average GC: 从开始到当前时间点的平均GC情况，是累计的平均值
+    # Parse data from log
+    # Average GC: cumulative average GC from start to current time point
     data = []
     pattern = r'Current: (.*?), PID=(\d+), Memory=(.*?) MB'
     gc_pattern = r'Average GC: YGC=(\d+\.\d+)\((\d+\.\d+)ms\), FGC=(\d+\.\d+)\((\d+\.\d+)ms\)'
@@ -190,7 +190,7 @@ def parse_log_file(file_path):
                 timestamp = datetime.strptime(current_match.group(1), '%Y-%m-%d %H:%M:%S')
                 memory = float(current_match.group(3))
                 
-                # 默认值，避免某些日志条目缺少特定信息
+                # Default values to avoid missing specific information in some log entries
                 ygc_freq = ygc_time = fgc_freq = fgc_time = 0
                 avg_memory = avg_cpu = avg_threads = 0
                 raw_ygc = raw_ygc_time = raw_fgc = raw_fgc_time = 0
@@ -223,7 +223,7 @@ def parse_log_file(file_path):
                     avg_cpu = float(avg_match.group(2))
                     avg_threads = float(avg_match.group(3))
                 
-                # 不管是否找到Average匹配，都添加数据点
+                # Add data point regardless of whether Average match is found
                 data_point = {
                     'timestamp': timestamp,
                     'memory': memory,
@@ -256,84 +256,84 @@ def analyze_data(df):
     memory_growth = df['memory'].max() - df['memory'].min()
     hourly_growth = memory_growth / hours if hours > 0 else 0
     
-    # 获取最后一行数据
+    # Get the last row of data
     last_row = df.iloc[-1]
     
     print("\nPerformance Analysis Results:")
-    print(u"-" * 50)
+    print("-" * 50)
     print("Duration: {}".format(duration))
     print("Total Memory Growth: {:.2f} MB".format(memory_growth))
     print("Average Hourly Growth: {:.2f} MB/hour".format(hourly_growth))
-    print(u"-" * 50)
+    print("-" * 50)
     print("Final Average GC Statistics:")
     print("Young GC: {:.2f}/5s, Average Time: {:.2f}ms".format(last_row['ygc_freq'], last_row['ygc_time']))
     print("Full GC: {:.2f}/5s, Average Time: {:.2f}ms".format(last_row['fgc_freq'], last_row['fgc_time']))
-    print(u"-" * 50)
+    print("-" * 50)
     print("Final Average Resource Usage:")
     print("Memory: {:.2f} MB, CPU: {:.2f}%, Threads: {:.0f}".format(
         last_row['avg_memory'], last_row['avg_cpu'], last_row['avg_threads']))
-    print(u"-" * 50)
+    print("-" * 50)
     
     return duration, memory_growth, hourly_growth, last_row
 
 def resample_data_by_minute(df):
-    """将数据按每分钟重新采样，这样可以避免零值点过多导致的"火焰图"效果"""
-    # 设置时间索引
+    """Resample data by minute to avoid 'flame graph' effect caused by too many zero value points"""
+    # Set time index
     df_resampled = df.set_index('timestamp')
     
-    # 按每分钟重新采样并使用均值填充
+    # Resample by minute and fill with mean values
     df_resampled = df_resampled.resample('1min').mean()
     
-    # 填充缺失值（如果有必要）
+    # Fill missing values (if necessary)
     df_resampled = df_resampled.fillna(method='ffill')
     
-    # 重置索引，使timestamp重新成为列
+    # Reset index to make timestamp a column again
     df_resampled = df_resampled.reset_index()
     
     return df_resampled
 
 def calculate_realtime_gc(df):
-    """计算实时GC数据，每分钟采样一次"""
-    # 复制数据框并添加新列
+    """Calculate real-time GC data, sampled once per minute"""
+    # Copy dataframe and add new columns
     df = df.copy()
     
-    # 确保数据按时间排序
+    # Ensure data is sorted by time
     df = df.sort_values('timestamp')
     
-    # 添加新列用于存储实时GC数据
+    # Add new columns for real-time GC data
     df['rt_ygc_freq'] = 0.0
     df['rt_ygc_time'] = 0.0
     df['rt_fgc_freq'] = 0.0
     df['rt_fgc_time'] = 0.0
     
-    # 对每个时间点，计算相对于前一分钟的GC变化
+    # For each time point, calculate GC changes relative to the previous minute
     if len(df) > 1:
         for i in range(1, len(df)):
-            # 计算时间差（秒）
+            # Calculate time difference (seconds)
             time_diff = (df.iloc[i]['timestamp'] - df.iloc[i-1]['timestamp']).total_seconds()
             
             if time_diff > 0:
-                # 计算YGC次数和时间变化率（每分钟）
+                # Calculate YGC count and time change rate (per minute)
                 ygc_diff = df.iloc[i]['raw_ygc'] - df.iloc[i-1]['raw_ygc']
                 ygc_time_diff = df.iloc[i]['raw_ygc_time'] - df.iloc[i-1]['raw_ygc_time']
                 
-                # 计算FGC次数和时间变化率（每分钟）
+                # Calculate FGC count and time change rate (per minute)
                 fgc_diff = df.iloc[i]['raw_fgc'] - df.iloc[i-1]['raw_fgc']
                 fgc_time_diff = df.iloc[i]['raw_fgc_time'] - df.iloc[i-1]['raw_fgc_time']
                 
-                # 转换为每分钟的频率
+                # Convert to frequency per minute
                 minutes = time_diff / 60
                 if minutes > 0:
                     df.loc[df.index[i], 'rt_ygc_freq'] = ygc_diff / minutes
                     df.loc[df.index[i], 'rt_fgc_freq'] = fgc_diff / minutes
                 
-                # 计算平均每次GC的耗时（毫秒）
+                # Calculate average time per GC (milliseconds)
                 if ygc_diff > 0:
                     df.loc[df.index[i], 'rt_ygc_time'] = (ygc_time_diff * 1000) / ygc_diff
                 if fgc_diff > 0:
                     df.loc[df.index[i], 'rt_fgc_time'] = (fgc_time_diff * 1000) / fgc_diff
     
-    # 处理首行
+    # Process first row
     df.loc[df.index[0], 'rt_ygc_freq'] = df.loc[df.index[0], 'ygc_freq']
     df.loc[df.index[0], 'rt_fgc_freq'] = df.loc[df.index[0], 'fgc_freq']
     df.loc[df.index[0], 'rt_ygc_time'] = df.loc[df.index[0], 'ygc_time']
@@ -342,63 +342,63 @@ def calculate_realtime_gc(df):
     return df
 
 def extract_instant_gc_data(df):
-    """每10分钟提取一次实时GC数据"""
-    # 复制数据框
+    """Extract real-time GC data every 10 minutes"""
+    # Copy dataframe
     df = df.copy()
     
-    # 确保数据按时间排序
+    # Ensure data is sorted by time
     df = df.sort_values('timestamp')
     
-    # 获取开始和结束时间
+    # Get start and end times
     start_time = df['timestamp'].min()
     end_time = df['timestamp'].max()
     
-    # 创建一个新的DataFrame来存储每10分钟的数据点
+    # Create a new DataFrame to store data points every 10 minutes
     ten_min_points = []
     
-    # 设置当前时间为开始时间
+    # Set current time to start time
     current_time = start_time
     
-    # 每隔10分钟取一个点
+    # Take a point every 10 minutes
     while current_time <= end_time:
-        # 找到最接近当前时间的数据点
+        # Find the data point closest to current time
         closest_idx = (df['timestamp'] - current_time).abs().idxmin()
         ten_min_points.append(df.loc[closest_idx])
         
-        # 增加10分钟
+        # Add 10 minutes
         current_time += timedelta(minutes=10)
     
-    # 创建新的DataFrame
+    # Create new DataFrame
     return pd.DataFrame(ten_min_points)
 
 def create_visualizations(df, log_file):
-    # 按每分钟重新采样数据
+    # Resample data by minute
     df_resampled = resample_data_by_minute(df)
     
-    # 计算实时GC数据
+    # Calculate real-time GC data
     df_with_rt = calculate_realtime_gc(df_resampled)
     
-    # 获取性能分析结果
+    # Get performance analysis results
     duration = df['timestamp'].max() - df['timestamp'].min()
     hours = duration.total_seconds() / 3600
     memory_growth = df['memory'].max() - df['memory'].min()
     hourly_growth = memory_growth / hours if hours > 0 else 0
     last_row = df.iloc[-1]
     
-    # 解决英文字体显示问题
+    # Solve English font display issues
     plt.rcParams.update({
         'font.family': 'sans-serif',
         'font.sans-serif': FONT_LIST,
         'axes.unicode_minus': False,
     })
     
-    # 创建四个图表布局
+    # Create four chart layout
     fig = plt.figure(figsize=(15, 10))
     
-    # 设置时间格式，只显示时分，不显示秒
+    # Set time format to show only hours and minutes, not seconds
     time_format = mdates.DateFormatter('%H:%M')
     
-    # 使用纯英文标签
+    # Use English-only labels
     memory_title = 'Memory Usage Trend'
     gc_freq_title = 'GC Frequency'
     gc_time_title = 'GC Time'
@@ -420,7 +420,7 @@ def create_visualizations(df, log_file):
     cpu_usage_label = 'CPU Usage'
     thread_count_label = 'Thread Count'
     
-    # 第一个图：内存使用趋势
+    # First chart: Memory usage trend
     ax1 = plt.subplot(2, 2, 1)
     ax1.plot(df_with_rt['timestamp'], df_with_rt['memory'], label=current_mem_label, color='blue')
     ax1.plot(df_with_rt['timestamp'], df_with_rt['avg_memory'], label=avg_mem_label, color='red', linestyle='--')
@@ -431,7 +431,7 @@ def create_visualizations(df, log_file):
     ax1.legend()
     ax1.grid(True)
     
-    # 第二个图：GC频率
+    # Second chart: GC frequency
     ax2 = plt.subplot(2, 2, 2)
     ax2.plot(df_with_rt['timestamp'], df_with_rt['ygc_freq'], label=ygc_freq_label, color='green')
     ax2.plot(df_with_rt['timestamp'], df_with_rt['fgc_freq'], label=fgc_freq_label, color='red')
@@ -442,7 +442,7 @@ def create_visualizations(df, log_file):
     ax2.legend()
     ax2.grid(True)
     
-    # 第三个图：GC时间
+    # Third chart: GC time
     ax3 = plt.subplot(2, 2, 3)
     ax3.plot(df_with_rt['timestamp'], df_with_rt['ygc_time'], label=ygc_time_label, color='green')
     ax3.plot(df_with_rt['timestamp'], df_with_rt['fgc_time'], label=fgc_time_label, color='red')
@@ -453,7 +453,7 @@ def create_visualizations(df, log_file):
     ax3.legend()
     ax3.grid(True)
     
-    # 第四个图：CPU和线程
+    # Fourth chart: CPU and threads
     ax4 = plt.subplot(2, 2, 4)
     ax4.plot(df_with_rt['timestamp'], df_with_rt['avg_cpu'], label=cpu_usage_label, color='purple')
     ax4_twin = ax4.twinx()
@@ -468,10 +468,10 @@ def create_visualizations(df, log_file):
     ax4.legend(lines1 + lines2, labels1 + labels2)
     ax4.grid(True)
     
-    # 添加总标题
+    # Add overall title
     plt.suptitle('Performance Analysis', fontsize=16)
     
-    # 添加性能分析结果文本
+    # Add performance analysis results text
     performance_text = (
         "Duration: {} | Memory Growth: {:.2f} MB | Hourly Growth: {:.2f} MB/hour | "
         "Young GC: {:.2f}/5s ({:.2f}ms) | Full GC: {:.2f}/5s ({:.2f}ms) | "
@@ -483,22 +483,22 @@ def create_visualizations(df, log_file):
         last_row['avg_memory'], last_row['avg_cpu'], last_row['avg_threads']
     )
     
-    # 添加性能分析文本在底部
+    # Add performance analysis text at the bottom
     fig.text(0.5, 0.01, performance_text, ha='center', fontsize=10)
     
-    # 调整布局和间距
+    # Adjust layout and spacing
     plt.tight_layout()
     plt.subplots_adjust(top=0.92, bottom=0.08)
     
-    # 生成基于输入日志文件名的输出文件名
+    # Generate output filename based on input log filename
     log_filename = os.path.basename(log_file)
     output_file = os.path.splitext(log_filename)[0] + '-analysis.png'
     
-    # 保存图表
+    # Save chart
     plt.savefig(output_file, dpi=300, bbox_inches='tight')
     print("\nChart saved as: {}".format(output_file))
     
-    # 根据平台决定是否显示图表
+    # Decide whether to display chart based on platform
     if INTERACTIVE:
         try:
             plt.show()
@@ -510,25 +510,25 @@ def create_visualizations(df, log_file):
         plt.close()
 
 def test_fonts(font_list=None):
-    """测试系统中可用的字体并生成示例图片
+    """Test available fonts in the system and generate sample image
     
     Args:
-        font_list: 指定测试的字体列表，默认测试系统中所有字体
+        font_list: Specified list of fonts to test, defaults to testing all system fonts
     """
     try:
         from matplotlib.font_manager import FontManager
         import matplotlib.pyplot as plt
         
-        # 获取所有可用字体
+        # Get all available fonts
         font_manager = FontManager()
         font_list = sorted([f.name for f in font_manager.ttflist])
         
         print("Detected {} fonts in the system".format(len(font_list)))
         
-        # 创建更详细的测试图表
+        # Create more detailed test chart
         fig, axes = plt.subplots(2, 1, figsize=(15, 12))
         
-        # 顶部图表：测试中英文和数字混合
+        # Top chart: Test mixed English and numbers
         axes[0].set_title('Text and Number Display Test', fontsize=16)
         axes[0].set_xlim(0, 1)
         axes[0].set_ylim(0, 10)
@@ -544,7 +544,7 @@ def test_fonts(font_list=None):
         axes[0].set_xticks([])
         axes[0].set_yticks([])
         
-        # 底部图表：测试简单图表
+        # Bottom chart: Test simple chart
         x = np.arange(10)
         y1 = x * x
         y2 = x * 10
@@ -575,7 +575,7 @@ def main():
         
     log_file = sys.argv[1]
     
-    # 添加字体测试功能
+    # Add font testing functionality
     if log_file == 'test-fonts':
         test_fonts()
         return
@@ -592,8 +592,8 @@ def main():
     except Exception as e:
         print("Error: Exception during analysis: {}".format(str(e)))
         import traceback
-        traceback.print_exc()  # 打印详细的错误堆栈
-        # 字体相关错误处理
+        traceback.print_exc()  # Print detailed error stack
+        # Font-related error handling
         if "font" in str(e).lower():
             print("\nTip: Font issues detected, please try the following solutions:")
             print("1. Install more fonts:")
@@ -604,7 +604,7 @@ def main():
             print("   sudo mkdir -p /usr/share/fonts/truetype/custom")
             print("   sudo cp your_font.ttf /usr/share/fonts/truetype/custom/")
             print("   sudo fc-cache -fv")
-        # 显示相关错误
+        # Display-related errors
         elif "display" in str(e).lower():
             print("\nTip: This is a graphical interface error, but the chart should have been saved as an image file")
         sys.exit(1)
