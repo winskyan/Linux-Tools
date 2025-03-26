@@ -6,6 +6,8 @@ TARGET_PID=$1
 INTERVAL=2
 # 输出日志文件
 LOG_FILE="usage-$(date "+%Y%m%d_%H%M%S")-$TARGET_PID.log"
+# 添加启动时间记录
+START_TIME=$(date +%s)
 
 if [ -z "$TARGET_PID" ]; then
   echo "Usage: $0 <pid>"
@@ -38,6 +40,25 @@ TOTAL_THREADS=0
 TOTAL_IO_READ=0
 TOTAL_IO_WRITE=0
 TOTAL_SOCKET=0
+
+# 函数：计算运行时间
+format_duration() {
+  local duration=$1
+  local hours=$((duration / 3600))
+  local minutes=$(((duration % 3600) / 60))
+  local seconds=$((duration % 60))
+  local result=""
+
+  if [ $hours -gt 0 ]; then
+    result="${hours}h"
+  fi
+  if [ $minutes -gt 0 ]; then
+    result="${result}${minutes}m"
+  fi
+  result="${result}${seconds}s"
+
+  echo "$result"
+}
 
 # 函数 获取GC详细信息
 get_gc_stats() {
@@ -86,11 +107,11 @@ while true; do
     while read -r PID MEM_USAGE CPU_USAGE; do
       # 处理内存单位
       if [[ $MEM_USAGE == *g ]]; then
-        MEM_USAGE=$(calc "${MEM_USAGE%g} * 1024 * 1024")  # 转换为KB
+        MEM_USAGE=$(calc "${MEM_USAGE%g} * 1024 * 1024") # 转换为KB
       elif [[ $MEM_USAGE == *m ]]; then
-        MEM_USAGE=$(calc "${MEM_USAGE%m} * 1024")  # 转换为KB
+        MEM_USAGE=$(calc "${MEM_USAGE%m} * 1024") # 转换为KB
       elif [[ $MEM_USAGE == *k ]]; then
-        MEM_USAGE="${MEM_USAGE%k}"  # 去掉k单位,保持为KB
+        MEM_USAGE="${MEM_USAGE%k}" # 去掉k单位,保持为KB
       fi
 
       # 获取GC统计信息
@@ -113,7 +134,7 @@ while true; do
         # 计算GC时间差值(毫秒)
         if [ $INSTANT_YGC -gt 0 ]; then
           INSTANT_YGCT=$(calc "(($YGCT - $LAST_YGCT) * 1000)")
-          if (( $(echo "$INSTANT_YGCT == 0" | bc -l) )); then
+          if (($(echo "$INSTANT_YGCT == 0" | bc -l))); then
             INSTANT_YGCT="0.001"
           fi
         else
@@ -122,7 +143,7 @@ while true; do
 
         if [ $INSTANT_FGC -gt 0 ]; then
           INSTANT_FGCT=$(calc "(($FGCT - $LAST_FGCT) * 1000)")
-          if (( $(echo "$INSTANT_FGCT == 0" | bc -l) )); then
+          if (($(echo "$INSTANT_FGCT == 0" | bc -l))); then
             INSTANT_FGCT="0.001"
           fi
         else
@@ -201,8 +222,13 @@ while true; do
       # 获取当前时间戳
       TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S")
 
+      # 计算运行时间
+      CURRENT_TIME=$(date +%s)
+      DURATION=$((CURRENT_TIME - START_TIME))
+      RUNTIME=$(format_duration $DURATION)
+
       # 构建输出信息
-      CURRENT_INFO="Current: $TIMESTAMP, PID=$PID, Memory=$MEM_USAGE_MB MB, CPU=$CPU_USAGE%, Threads=$THREADS"
+      CURRENT_INFO="Current: $TIMESTAMP, PID=$PID, Memory=$MEM_USAGE_MB MB, CPU=$CPU_USAGE%, Threads=$THREADS, Runtime=$RUNTIME"
       GC_RAW="Raw GC: Young GC=$YGC, Young GC Time=$YGCT, Full GC=$FGC, Full GC Time=$FGCT"
       GC_INSTANT="Instant GC: Young GC=$INSTANT_YGC(${INSTANT_YGCT}ms), Full GC=$INSTANT_FGC(${INSTANT_FGCT}ms)"
       GC_AVG="Average GC: YGC=${AVG_YGC_COUNT}($(printf "%.3f" ${AVG_YGC_TIME})ms), FGC=${AVG_FGC_COUNT}($(printf "%.3f" ${AVG_FGC_TIME})ms)"
